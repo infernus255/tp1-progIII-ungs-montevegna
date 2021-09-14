@@ -11,13 +11,26 @@ import javax.swing.JButton;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JTable;
 import javax.swing.ListSelectionModel;
+import javax.swing.table.DefaultTableModel;
+
+import controller.BoardController;
+import dto.UpdateLightBoardDto;
+import service.BoardService;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
 
 public class MainWindow {
 
 	private JFrame frame;
 	private JTable table;
+	private BoardController boardController;
+	private BoardService boardService;
+	private int movesCount = 0;
 
 	/**
 	 * Launch the application.
@@ -56,9 +69,22 @@ public class MainWindow {
 		JPanel panel = new JPanel();
 		frame.getContentPane().add(panel, BorderLayout.EAST);
 
-		String[] columnNames = { "1", "2", "3" };
+		// TODO : dynamic matrix
+		boardService = new BoardService(4);
+		boardController = new BoardController(boardService);
 
-		Boolean[][] data = { { true, false, true }, { false, true, false }, { false, true, false } };
+		String[] columnNames = { "0", "1", "2", "3" };
+
+		Boolean[][] data = boardController.get();
+
+		DefaultTableModel tableModel = new DefaultTableModel(data, columnNames) {
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public boolean isCellEditable(int row, int col) {
+				return false;
+			}
+		};
 
 		GridBagLayout gbl_panel = new GridBagLayout();
 		gbl_panel.columnWidths = new int[] { 30, 126, 35, 59, 0 };
@@ -67,7 +93,45 @@ public class MainWindow {
 		gbl_panel.rowWeights = new double[] { 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE };
 		panel.setLayout(gbl_panel);
 
-		table = new JTable(data, columnNames);
+		JLabel lblMoves = new JLabel("Moves: " + movesCount);
+		lblMoves.setEnabled(false);
+		GridBagConstraints gbc_lblMoves = new GridBagConstraints();
+		gbc_lblMoves.insets = new Insets(0, 0, 5, 5);
+		gbc_lblMoves.gridx = 1;
+		gbc_lblMoves.gridy = 1;
+		panel.add(lblMoves, gbc_lblMoves);
+
+		table = new JTable(tableModel);
+		table.setEnabled(false);
+		table.setRowSelectionAllowed(false);
+		table.setCellSelectionEnabled(true);
+		table.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				UpdateLightBoardDto light = new UpdateLightBoardDto();
+				light.row = table.getSelectedRow();
+				light.col = table.getSelectedColumn();
+
+				if (light.row > -1 && light.col > -1) {
+					boardController.updateLight(light);
+					DefaultTableModel tableModel = (DefaultTableModel) table.getModel();
+					tableModel = new DefaultTableModel(boardController.get(), columnNames) {
+						private static final long serialVersionUID = 1L;
+
+						@Override
+						public boolean isCellEditable(int row, int col) {
+							return false;
+						}
+					};
+					table.setModel(tableModel);
+					lblMoves.setText("Moves: " + ++movesCount);
+					if (boardController.win()) {
+						table.setEnabled(false);
+						String respuesta = JOptionPane.showInputDialog("Felicidades, ganaste, escribe tu nombre: ");
+					}
+				}
+			}
+		});
 		table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		table.setFillsViewportHeight(true);
 
@@ -85,14 +149,13 @@ public class MainWindow {
 		// Frame Visible = true
 		frame.setVisible(true);
 
-		JLabel lblScore = new JLabel("Score:");
-		GridBagConstraints gbc_lblScore = new GridBagConstraints();
-		gbc_lblScore.insets = new Insets(0, 0, 5, 5);
-		gbc_lblScore.gridx = 1;
-		gbc_lblScore.gridy = 1;
-		panel.add(lblScore, gbc_lblScore);
-
 		JButton btnStart = new JButton("Start");
+		btnStart.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				table.setEnabled(true);
+				btnStart.setEnabled(false);
+			}
+		});
 		GridBagConstraints gbc_btnStart = new GridBagConstraints();
 		gbc_btnStart.insets = new Insets(0, 0, 5, 5);
 		gbc_btnStart.gridx = 1;
