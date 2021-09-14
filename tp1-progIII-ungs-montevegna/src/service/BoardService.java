@@ -57,21 +57,28 @@ public class BoardService implements IBoardService {
 	}
 
 	public int calculateVertexPosition(int row, int col) {
-		validVertex(row);
-		validVertex(col);
+		validVertexMatrix(row);
+		validVertexMatrix(col);
 		return (row * _matLength) + col;
 	}
 
-	private void validVertex(int i) {
+	private void validVertexMatrix(int i) {
 		if (i < 0)
 			throw new IllegalArgumentException("Parameter mustn't be negative: " + i);
 		if (i >= _matLength)
-			throw new IllegalArgumentException("Edges must be between 0 and |V|-1: " + i);
+			throw new IllegalArgumentException("Edges must be between 0 and |Matrix|-1: " + i);
+	}
+	
+	private void validVertexVector(int i) {
+		if (i < 0)
+			throw new IllegalArgumentException("Parameter mustn't be negative: " + i);
+		if (i >= _arr.length-1)
+			throw new IllegalArgumentException("Vertex must be between 0 and |Vector|-1: " + i);
 	}
 
 	// vertex: From 0 to _arr.length() - 1
 	public void changeLightState(int vertex) {
-		validVertex(vertex);
+		validVertexVector(vertex);
 		HashSet<Integer> neighbors = (HashSet<Integer>) _graph.getNeighbors(vertex);
 		_arr[vertex] = !_arr[vertex];
 		updateWinCount(vertex);
@@ -108,10 +115,10 @@ public class BoardService implements IBoardService {
 	@Override
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		for (int vertex = 0; vertex < _matLength; ++vertex) {
+		for (int vertex = 0; vertex < _arr.length ; ++vertex) {
 			sb.append(_arr[vertex]);
 			sb.append(" ");
-			if (isFloor(((vertex + 1) / _matLength)))
+			if (isFloor(((vertex + 1) / (double)_matLength)))
 				sb.append(System.getProperty("line.separator"));
 		}
 		return sb.toString();
